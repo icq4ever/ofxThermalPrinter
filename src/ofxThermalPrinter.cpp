@@ -23,19 +23,41 @@ bool ofxThermalPrinter::open(const std::string& portName){
     }
     
     bConnected = true;
-    usleep(50000);
+    ofSleepMillis(50000);
     reset();
-    usleep(50000);
+    ofSleepMillis(50000);
     
-    setControlParameter();
-    setPrintDensity();
+    // These values (including printDensity and printBreaktime) are taken from
+    // lazyatom's Adafruit-Thermal-Library branch and seem to work nicely with bitmap
+    // images. Changes here can cause symptoms like images printing out as random text.
+    // Play freely, but remember the working values.
+    // https://github.com/adafruit/Adafruit-Thermal-Printer-Library/blob/0cc508a9566240e5e5bac0fa28714722875cae69/Thermal.cpp
+
+    // Set "max heating dots", "heating time", "heating interval"
+    // n1 = 0-255 Max printing dots, Unit (8dots), Default: 7 (64 dots)
+    // n2 = 3-255 Heating time, Unit (10us), Default: 80 (800us)
+    // n3 = 0-255 Heating interval, Unit (10us), Default: 2 (20us)
+    // The more max heating dots, the more peak current will cost
+    // when printing, the faster printing speed. The max heating
+    // dots is 8*(n1+1). The more heating time, the more density,
+    // but the slower printing speed. If heating time is too short,
+    // blank page may occur. The more heating interval, the more
+    // clear, but the slower printing speed.
+    setControlParameter(7, 80, 2);
+    
+    // Description of print density from page 23 of the manual:
+    // DC2 # n Set printing density
+    // Decimal: 18 35 n
+    // D4..D0 of n is used to set the printing density.
+    // Density is 50% + 5% * n(D4-D0) printing density.
+    // D7..D5 of n is used to set the printing break time.
+    // Break time is n(D7-D5)*250us.
+    // (Unsure of the default value for either -- not documented)
+    setPrintDensity(14, 4);
+    
     setStatus(true);
     
     port->flushOutput();
-    
-    setReverse(true);
-    println("Reverse ON");
-    setReverse(false);
     
     return bConnected;
 }
@@ -43,32 +65,32 @@ bool ofxThermalPrinter::open(const std::string& portName){
 void ofxThermalPrinter::write(const uint8_t &_a){
     if(bConnected){
         port->write(&_a, 1);
-        usleep(BYTE_TIME);
+        ofSleepMillis(BYTE_TIME);
     }
 }
 
 void ofxThermalPrinter::write(const uint8_t &_a,const uint8_t &_b ){
     const uint8_t command[2] = { _a, _b };
     write(command, 2);
-    usleep(BYTE_TIME*2);
+    ofSleepMillis(BYTE_TIME*2);
 }
 
 void ofxThermalPrinter::write(const uint8_t &_a, const uint8_t &_b, const uint8_t &_c ){
     const uint8_t command[3] = { _a, _b, _c };
     write(command, 3);
-    usleep(BYTE_TIME*3);
+    ofSleepMillis(BYTE_TIME*3);
 }
 
 void ofxThermalPrinter::write(const uint8_t &_a, const uint8_t &_b, const uint8_t &_c, const uint8_t &_d){
     const uint8_t command[4] = { _a, _b, _c, _b };
     write(command, 4);
-    usleep(BYTE_TIME*4);
+    ofSleepMillis(BYTE_TIME*4);
 }
 
 void ofxThermalPrinter::write(const uint8_t *_array, int _size){
     if(bConnected){
         port->write(_array, _size);
-        usleep(BYTE_TIME*_size);
+        ofSleepMillis(BYTE_TIME*_size);
     }
 }
 
@@ -145,7 +167,8 @@ void ofxThermalPrinter::setAlign(AlignMode align) {
 
 // set how many blanks should be kept on the left side
 void ofxThermalPrinter::setLeftBlankCharNums(uint8_t space) {
-    if (space >= 47) space = 47;
+    ofClamp(space, 0, 47);
+    //if (space >= 47) space = 47;
     write(27, 66, space);
 }
 
@@ -188,8 +211,9 @@ void ofxThermalPrinter::setBarcodeHeight(uint8_t height) {
 
 // sets the barcode line widths (only 2 or 3)
 void ofxThermalPrinter::setBarCodeWidth(uint8_t width) {
-    if (width <= 2) width=2;
-    else if (width >= 3) width=3;
+    ofClamp(width, 2, 3);
+//    if (width <= 2) width=2;
+//    else if (width >= 3) width=3;
     
     write(29, 119, width);
 }
@@ -197,7 +221,7 @@ void ofxThermalPrinter::setBarCodeWidth(uint8_t width) {
 void ofxThermalPrinter::print(const std::string& text){
     if(bConnected){
         port->write(text);
-        usleep(BYTE_TIME*text.size());
+        ofSleepMillis(BYTE_TIME*text.size());
     }
 }
 
@@ -211,13 +235,13 @@ void ofxThermalPrinter::printBarcode(const std::string &data, BarcodeType type) 
     if(bConnected){
         write(29, 107, type);
         port->write(data);
-        usleep(BYTE_TIME*data.size());
+        ofSleepMillis(BYTE_TIME*data.size());
         write(0);
     }
 }
 
 void ofxThermalPrinter::print(ofBaseHasPixels &_img, int _threshold){
-    print(_img.getPixelsRef(),_threshold);
+    print(_img.getPixels(),_threshold);
 }
 
 void ofxThermalPrinter::print(ofPixels &_pixels, int _threshold){
@@ -243,8 +267,9 @@ void ofxThermalPrinter::print(ofPixels &_pixels, int _threshold){
             
             // Brightness correction curve:
             brightTemp =  sqrt(255) * sqrt (brightTemp);
-            if (brightTemp > 255) brightTemp = 255;
-            if (brightTemp < 0) brightTemp = 0;
+            ofClamp(brightTemp, 0, 255);
+//            if (brightTemp > 255) brightTemp = 255;
+//            if (brightTemp < 0) brightTemp = 0;
             
             int darkness = 255 - floor(brightTemp);
             
@@ -334,12 +359,12 @@ void ofxThermalPrinter::printPixelRow(vector<bool> _line){
             data[i/8] += (bit&0x01)<<(7-i%8);
         }
         
-        const uint8_t command[4] = {18, 42, 1, rowBytesClipped};
+        const uint8_t command[4] = {18, 42, 1, static_cast<uint8_t>(rowBytesClipped)};
         port->write(command, 4);
-        usleep(BYTE_TIME*4);
+        ofSleepMillis(BYTE_TIME*4);
         
         port->write(data,rowBytesClipped);
-        usleep(BYTE_TIME*rowBytesClipped);
+        ofSleepMillis(BYTE_TIME*rowBytesClipped);
     }
 }
 

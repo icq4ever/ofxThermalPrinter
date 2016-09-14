@@ -25,7 +25,7 @@
 // Number of microseconds to issue one byte to the printer.  11 bits
 // (not 8) to accommodate idle, start and stop bits.  Idle time might
 // be unnecessary, but erring on side of caution here.
-#define BYTE_TIME (11L * 1000000L / BAUDRATE)
+#define BYTE_TIME 11L / BAUDRATE
 
 enum CharacterSet {
     USA              = 0,
@@ -95,11 +95,12 @@ public:
     void    close();
     void    reset();
     
-    void    setControlParameter(uint8_t heatingDots=20, uint8_t heatingTime=200, uint8_t heatingInterval=250);
+    void    setControlParameter(uint8_t, uint8_t heatingTime, uint8_t heatingInterval);
+    
+    void    setPrintDensity(uint8_t printDensity, uint8_t printBreakTime);
+    
     void    setSleepTime(uint8_t seconds = 0);
     void    setStatus(bool state=true);
-    void    setPrintDensity(uint8_t printDensity=14, uint8_t printBreakTime=4);
-    
     void    setDoubleWidth(bool state=false);
     void    setBold(bool state=false);
     void    setReverse(bool state=false);
