@@ -80,8 +80,6 @@ enum BarcodeType {
     MSI
 };
 
-typedef std::shared_ptr<serial::Serial> SharedSerial;
-
 struct PixelsLine{
     bool *data;
     int size;
@@ -90,7 +88,7 @@ struct PixelsLine{
 class ofxThermalPrinter : public ofThread {
 public:
     ofxThermalPrinter();
-
+    
     bool    open(const std::string& portName);
     void    close();
     void    reset();
@@ -140,7 +138,7 @@ private:
     
     vector< vector<bool> > buffer;
     
-    SharedSerial    port;
+    std::shared_ptr<serial::Serial>    port;
     
     bool    bPrinting;
     bool    bConnected;

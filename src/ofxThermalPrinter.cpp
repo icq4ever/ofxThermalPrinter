@@ -7,7 +7,7 @@ ofxThermalPrinter::ofxThermalPrinter(){
 
 bool ofxThermalPrinter::open(const std::string& portName){
     try {
-        port = SharedSerial(new serial::Serial( portName,
+        port = std::shared_ptr<serial::Serial>(new serial::Serial( portName,
                                                BAUDRATE,
                                                serial::Timeout::simpleTimeout(1000),
                                                serial::eightbits,
@@ -23,16 +23,16 @@ bool ofxThermalPrinter::open(const std::string& portName){
     }
     
     bConnected = true;
-    ofSleepMillis(50000);
+    usleep(50000);
     reset();
-    ofSleepMillis(50000);
+    usleep(50000);
     
     // These values (including printDensity and printBreaktime) are taken from
     // lazyatom's Adafruit-Thermal-Library branch and seem to work nicely with bitmap
     // images. Changes here can cause symptoms like images printing out as random text.
     // Play freely, but remember the working values.
     // https://github.com/adafruit/Adafruit-Thermal-Printer-Library/blob/0cc508a9566240e5e5bac0fa28714722875cae69/Thermal.cpp
-
+    
     // Set "max heating dots", "heating time", "heating interval"
     // n1 = 0-255 Max printing dots, Unit (8dots), Default: 7 (64 dots)
     // n2 = 3-255 Heating time, Unit (10us), Default: 80 (800us)
@@ -65,32 +65,32 @@ bool ofxThermalPrinter::open(const std::string& portName){
 void ofxThermalPrinter::write(const uint8_t &_a){
     if(bConnected){
         port->write(&_a, 1);
-        ofSleepMillis(BYTE_TIME);
+        usleep(BYTE_TIME);
     }
 }
 
 void ofxThermalPrinter::write(const uint8_t &_a,const uint8_t &_b ){
     const uint8_t command[2] = { _a, _b };
     write(command, 2);
-    ofSleepMillis(BYTE_TIME*2);
+    usleep(BYTE_TIME*2);
 }
 
 void ofxThermalPrinter::write(const uint8_t &_a, const uint8_t &_b, const uint8_t &_c ){
     const uint8_t command[3] = { _a, _b, _c };
     write(command, 3);
-    ofSleepMillis(BYTE_TIME*3);
+    usleep(BYTE_TIME*3);
 }
 
 void ofxThermalPrinter::write(const uint8_t &_a, const uint8_t &_b, const uint8_t &_c, const uint8_t &_d){
     const uint8_t command[4] = { _a, _b, _c, _b };
     write(command, 4);
-    ofSleepMillis(BYTE_TIME*4);
+    usleep(BYTE_TIME*4);
 }
 
 void ofxThermalPrinter::write(const uint8_t *_array, int _size){
     if(bConnected){
         port->write(_array, _size);
-        ofSleepMillis(BYTE_TIME*_size);
+        usleep(BYTE_TIME*_size);
     }
 }
 
@@ -128,7 +128,6 @@ void ofxThermalPrinter::setSleepTime(uint8_t seconds) {
 void ofxThermalPrinter::setDoubleWidth(bool state) {
     write(27, state?14:20);
 }
-
 
 // set the print density and break time
 void ofxThermalPrinter::setPrintDensity(uint8_t printDensity, uint8_t printBreakTime) {
@@ -212,8 +211,8 @@ void ofxThermalPrinter::setBarcodeHeight(uint8_t height) {
 // sets the barcode line widths (only 2 or 3)
 void ofxThermalPrinter::setBarCodeWidth(uint8_t width) {
     ofClamp(width, 2, 3);
-//    if (width <= 2) width=2;
-//    else if (width >= 3) width=3;
+    //    if (width <= 2) width=2;
+    //    else if (width >= 3) width=3;
     
     write(29, 119, width);
 }
@@ -221,7 +220,7 @@ void ofxThermalPrinter::setBarCodeWidth(uint8_t width) {
 void ofxThermalPrinter::print(const std::string& text){
     if(bConnected){
         port->write(text);
-        ofSleepMillis(BYTE_TIME*text.size());
+        usleep(BYTE_TIME*text.size());
     }
 }
 
@@ -235,7 +234,7 @@ void ofxThermalPrinter::printBarcode(const std::string &data, BarcodeType type) 
     if(bConnected){
         write(29, 107, type);
         port->write(data);
-        ofSleepMillis(BYTE_TIME*data.size());
+        usleep(BYTE_TIME*data.size());
         write(0);
     }
 }
@@ -268,8 +267,8 @@ void ofxThermalPrinter::print(ofPixels &_pixels, int _threshold){
             // Brightness correction curve:
             brightTemp =  sqrt(255) * sqrt (brightTemp);
             ofClamp(brightTemp, 0, 255);
-//            if (brightTemp > 255) brightTemp = 255;
-//            if (brightTemp < 0) brightTemp = 0;
+            //            if (brightTemp > 255) brightTemp = 255;
+            //            if (brightTemp < 0) brightTemp = 0;
             
             int darkness = 255 - floor(brightTemp);
             
@@ -306,7 +305,6 @@ void ofxThermalPrinter::print(ofPixels &_pixels, int _threshold){
         }
         addToBuffer(data);
     }
-    
     delete []GrayArray;
 }
 
@@ -342,8 +340,8 @@ void ofxThermalPrinter::threadedFunction(){
 void ofxThermalPrinter::printPixelRow(vector<bool> _line){
     if(bConnected){
         int width = _line.size();
-        if(width>384)
-            width = 384;
+        ofClamp(width, 0, 384);
+        //if(width>384) width = 384;
         
         int rowBytes        = (width + 7) / 8;                 // Round up to next byte boundary
         int rowBytesClipped = (rowBytes >= 48) ? 48 : rowBytes; // 384 pixels max width
@@ -361,10 +359,10 @@ void ofxThermalPrinter::printPixelRow(vector<bool> _line){
         
         const uint8_t command[4] = {18, 42, 1, static_cast<uint8_t>(rowBytesClipped)};
         port->write(command, 4);
-        ofSleepMillis(BYTE_TIME*4);
+        usleep(BYTE_TIME*4);
         
         port->write(data,rowBytesClipped);
-        ofSleepMillis(BYTE_TIME*rowBytesClipped);
+        usleep(BYTE_TIME*rowBytesClipped);
     }
 }
 
