@@ -5,7 +5,7 @@ void ofApp::setup(){
 	ofSetVerticalSync(true);
 	ofSetLogLevel(OF_LOG_VERBOSE);
 
-    printer.open("/dev/tty.PL2303-00002014");
+    printer.open("/dev/tty.usbserial");
     
     img.loadImage("logo.jpg");
     video.initGrabber(640, 480);
@@ -29,7 +29,7 @@ void ofApp::exit(){
 //--------------------------------------------------------------
 void ofApp::keyPressed  (int key){ 
 	if(key == ' '){
-        printer.print(video);
+        printer.print(img);
     } else if (key == 't'){
         printer.println("Hello World!!");
     } else if (key == 'r'){

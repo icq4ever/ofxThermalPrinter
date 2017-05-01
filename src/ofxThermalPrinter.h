@@ -25,7 +25,11 @@
 // Number of microseconds to issue one byte to the printer.  11 bits
 // (not 8) to accommodate idle, start and stop bits.  Idle time might
 // be unnecessary, but erring on side of caution here.
-#define BYTE_TIME 11L / BAUDRATE
+// Adafruit default :
+//#define BYTE_TIME (((11L * 1000000L) + (BAUDRATE / 2)) / BAUDRATE)
+//ofxThermalPrinter default :
+//#define BYTE_TIME 11L / BAUDRATE
+#define BYTE_TIME (((11L * 1000000L) + (BAUDRATE / 2)) / BAUDRATE)
 
 enum CharacterSet {
     USA              = 0,

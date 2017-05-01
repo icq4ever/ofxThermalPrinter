@@ -33,7 +33,30 @@ bool ofxThermalPrinter::open(const std::string& portName){
     // Play freely, but remember the working values.
     // https://github.com/adafruit/Adafruit-Thermal-Printer-Library/blob/0cc508a9566240e5e5bac0fa28714722875cae69/Thermal.cpp
     
+    
+    // from adafruit library on github
+    // ESC 7 n1 n2 n3 Setting Control Parameter Command
+    // n1 = "max heating dots" 0-255 -- max number of thermal print head
+    //      elements that will fire simultaneously.  Units = 8 dots (minus 1).
+    //      Printer default is 7 (64 dots, or 1/6 of 384-dot width), this code
+    //      sets it to 11 (96 dots, or 1/4 of width).
+    // n2 = "heating time" 3-255 -- duration that heating dots are fired.
+    //      Units = 10 us.  Printer default is 80 (800 us), this code sets it
+    //      to value passed (default 120, or 1.2 ms -- a little longer than
+    //      the default because we've increased the max heating dots).
+    // n3 = "heating interval" 0-255 -- recovery time between groups of
+    //      heating dots on line; possibly a function of power supply.
+    //      Units = 10 us.  Printer default is 2 (20 us), this code sets it
+    //      to 40 (throttled back due to 2A supply).
+    // More heating dots = more peak current, but faster printing speed.
+    // More heating time = darker print, but slower printing speed and
+    // possibly paper 'stiction'.  More heating interval = clearer print,
+    // but slower printing speed.
+
+    
     // Set "max heating dots", "heating time", "heating interval"
+    //heatTime = 120; //80 is default from page 23 of datasheet. Controls speed of printing and darkness
+    //heatInterval = 50; //2 is default from page 23 of datasheet. Controls speed of printing and darkness
     // n1 = 0-255 Max printing dots, Unit (8dots), Default: 7 (64 dots)
     // n2 = 3-255 Heating time, Unit (10us), Default: 80 (800us)
     // n3 = 0-255 Heating interval, Unit (10us), Default: 2 (20us)
@@ -43,8 +66,19 @@ bool ofxThermalPrinter::open(const std::string& portName){
     // but the slower printing speed. If heating time is too short,
     // blank page may occur. The more heating interval, the more
     // clear, but the slower printing speed.
-    setControlParameter(7, 80, 2);
+    //setControlParameter(7, 80, 2);
+    //setControlParameter(7, 140, 20); // pas mal !
+    setControlParameter(11, 120, 4);
     
+    
+
+    // from adafruit library on github
+    //#define printDensity   10 // 100% (? can go higher, text is darker but fuzzy)
+    //#define printBreakTime  2 // 500 uS
+
+    // (printDensity, printBreakTime)
+    //printDensity = 15; //Not sure what the defaut is. Testing shows the max helps darken text. From page 23.
+    //printBreakTime = 15; //Not sure what the defaut is. Testing shows the max helps darken text. From page 23.
     // Description of print density from page 23 of the manual:
     // DC2 # n Set printing density
     // Decimal: 18 35 n
@@ -53,6 +87,7 @@ bool ofxThermalPrinter::open(const std::string& portName){
     // D7..D5 of n is used to set the printing break time.
     // Break time is n(D7-D5)*250us.
     // (Unsure of the default value for either -- not documented)
+    //setPrintDensity(14, 4);
     setPrintDensity(14, 4);
     
     setStatus(true);
