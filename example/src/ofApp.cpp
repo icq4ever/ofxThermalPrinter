@@ -5,7 +5,8 @@ void ofApp::setup(){
 	ofSetVerticalSync(true);
 	ofSetLogLevel(OF_LOG_VERBOSE);
 
-    printer.open("/dev/tty.usbserial");
+    printer.open("/dev/serial0");
+	printer.setControlParameter(7, 160, 0);
     
     img.loadImage("logo.jpg");
     video.initGrabber(640, 480);
