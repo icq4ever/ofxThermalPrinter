@@ -6,21 +6,23 @@ void ofApp::setup(){
 	ofSetLogLevel(OF_LOG_VERBOSE);
 
     printer.open("/dev/serial0");
-	printer.setControlParameter(7, 160, 0);
+	//printer.setControlParameter(7, 160, 0);
+//	printer.setReverse(true);
     
-    img.loadImage("logo.jpg");
-    video.initGrabber(640, 480);
+//    img.loadImage("logo.jpg");
+	img.load("img.jpg");
+//    video.initGrabber(640, 480);
 }
 
 //--------------------------------------------------------------
 void ofApp::update(){
-	video.update();
+	//video.update();
 }
 
 //--------------------------------------------------------------
 void ofApp::draw(){
     ofBackground(0);
-    video.draw(0,0);
+    img.draw(0,0);
 }
 
 void ofApp::exit(){
@@ -30,7 +32,8 @@ void ofApp::exit(){
 //--------------------------------------------------------------
 void ofApp::keyPressed  (int key){ 
 	if(key == ' '){
-        printer.print(img);
+		printer.print(img);			// threaded... using timer..!
+//		printer.println("\n\n");	
     } else if (key == 't'){
         printer.println("Hello World!!");
     } else if (key == 'r'){

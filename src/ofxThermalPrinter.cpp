@@ -13,7 +13,7 @@ bool ofxThermalPrinter::open(const std::string& portName){
                                                serial::eightbits,
                                                serial::parity_none,
                                                serial::stopbits_one,
-                                               serial::flowcontrol_none ));
+					                           serial::flowcontrol_none ));
     }
     
     catch (const std::exception& exc){
@@ -68,7 +68,8 @@ bool ofxThermalPrinter::open(const std::string& portName){
     // clear, but the slower printing speed.
     //setControlParameter(7, 80, 2);
     //setControlParameter(7, 140, 20); // pas mal !
-    setControlParameter(11, 120, 4);
+//    setControlParameter(11, 120, 4);
+	setControlParameter(7, 160, 0);
     
     
 
@@ -322,7 +323,7 @@ void ofxThermalPrinter::print(ofPixels &_pixels, int _threshold){
             // Atkinson dithering algorithm:  http://verlagmartinkoch.at/software/dither/index.html
             // Distribute error as follows:
             //     [ ]  1/8  1/8
-            //1/8  1/8  1/8
+            //	   1/8  1/8  1/8
             //     1/8
             
             if ((idx + 1) < GrayArrayLength)
